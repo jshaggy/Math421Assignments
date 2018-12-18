@@ -1,0 +1,194 @@
+---
+title: "MATH 421 - Final Presentation"
+author: "Josie Shaggy"
+date: "December 15, 2018"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+
+- Data: "2017 Iditarod Trail Sled Dog Race" from Kaggle https://www.kaggle.com/iditarod/iditarod-race
+- I am predicting whether or not a participant is a "Rookie" (first time participant) or a "Veteran" (a returning participant). 
+- Not necessarily the most useful target variable, but it would be helpful if someone were to bet on a participant, and are choosing between a rookie or veteran. It was also chosed out of curiosity on my part.
+- There does not appear to be any other works on this problem.
+- 1146 observations
+
+
+## My Variables
+- Number - Bib Number
+- Name - Musher's Name
+-	Status - Status in the Race
+-	Country - Country of Origin
+-	Checkpoint - Checkpoint Name
+-	Latitude - location of checkpoint
+-	Longitude - location of checkpoint
+-	Distance - distance in miles from last checkpoint
+-	Time - time in hours from departure at the last checkpoint,
+-	Speed - average speed in miles per hour
+-	Arrival Date
+
+## My Variables (cont'd)
+
+-	Arrival Time (Removed)
+-	Arrival Dogs - number of dogs at arrival
+-	Elapsed Time - layover time at the checkpoint
+-	Departure Date
+-	Departure Time (Removed)
+-	Departure Dogs - Number of dogs at departure
+
+## Recoded Variables
+
+- Name: 72 levels, changed to Male and Female
+- Checkpoint: 17 levels, changed to Early, Middle, and End
+- Arrival.Date: 14 levels, changed to Sunday-Saturday
+- Departure.Date: 14 levels, changed to Sunday-Saturday
+
+## Replacing Missing Values
+Missing/blank Arrival.Date and Departure.Date were recoded as "Sunday"
+
+- "Mean Impute" - replaced all missing numerics with means
+- MedianImpute
+- knnImpute
+
+## Encoding
+Ran models:
+
+ - without encoding
+ - with dummy encoding
+ - with numeric encoding
+
+## Examples of graphs
+```{r, echo = FALSE}
+library(ggplot2)
+dog = read.csv("report.csv")
+
+dog$Distance[is.na(dog$Distance)] = mean(dog$Distance, na.rm = TRUE)
+dog$Speed[is.na(dog$Speed)] = mean(dog$Speed, na.rm = TRUE)
+dog$Arrival.Dogs[is.na(dog$Arrival.Dogs)] = mean(dog$Arrival.Dogs, na.rm = TRUE)
+dog$Elapsed.Time[is.na(dog$Elapsed.Time)] = mean(dog$Elapsed.Time, na.rm = TRUE)
+dog$Departure.Dogs[is.na(dog$Departure.Dogs)] = mean(dog$Departure.Dogs, na.rm = TRUE)
+dog$Arrival.Time = NULL
+dog$Departure.Time = NULL
+
+levels(dog$Name) = c("Male", "Female", "Male", "Female","Male", "Female","Male","Male","Male","Male","Female","Female","Male","Male","Male","Male","Male","Male","Female","Male","Male", "Female", "Male","Male","Male","Male","Female", "Female","Male","Male","Female","Female", "Male","Male","Female","Male","Male","Male","Male","Male","Male","Female","Male","Female","Female","Male","Female","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female")
+
+levels(dog$Checkpoint) = c("End", "Early", "Middle", "Middle", "End","End", "Middle", "Early", "Early","End", "Middle", "Middle","Early","End","Early","Middle","End")
+
+levels(dog$Arrival.Date) = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+levels(dog$Departure.Date) = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+```
+
+```{r}
+ggplot(dog)+geom_bar(mapping = aes(x=Country, fill=Status), position="dodge")+ggtitle("Status by Country")
+```
+
+
+This graph shows the country and status of Iditarod participants.
+
+## 
+```{r}
+ggplot(dog)+geom_point(mapping = aes(x = Distance, y = Speed, color=Status))+ggtitle("Graph of Speed by Distance and Status")
+```
+
+This graph shows the distance and speed of Iditarod participants by their status. 
+
+##
+```{r}
+ggplot(dog)+geom_density(mapping = aes(x = Time, color=Name))+ggtitle("Graph of Time and Gender")
+
+```
+
+This graph shows the density plot of time for Iditarod partcipants by gender.
+
+##
+```{r}
+ggplot(dog)+geom_point(mapping = aes(x = Distance, y = Speed, color=Country))+ggtitle("Graph of Speed by Distance and Country")
+```
+
+This graph shows the speed and distance of Iditarod participants by their country.
+
+## Final Model - Random Forest - Mean Impute - Dummy Encoding
+
+My final model is the Random Forest using Mean Impute with Dummy Encoding. The Accuracy was 0.0021362 below the Random Forest using KNNImpute with Numeric Encoding, but the Balanced Accruracy was 0.0129426 higher. Because the Balanced Accuracy was higher, I chose the Random Forest using Mean Impute with Dummy Encoding. At the time I was typing this, the Accuracy for RF with Mean Impute and Dummy Encoding was 0.8857143 and the Balanced Accuracry was 0.8850786. 
+
+```{r, echo= FALSE, warning=FALSE}
+library(ggplot2)
+library(lattice)
+library(ranger)
+library(caret)
+
+dogs = read.csv("report.csv")
+
+dogs$Distance[is.na(dogs$Distance)] = mean(dogs$Distance, na.rm = TRUE)
+dogs$Speed[is.na(dogs$Speed)] = mean(dogs$Speed, na.rm = TRUE)
+dogs$Arrival.Dogs[is.na(dogs$Arrival.Dogs)] = mean(dogs$Arrival.Dogs, na.rm = TRUE)
+dogs$Elapsed.Time[is.na(dogs$Elapsed.Time)] = mean(dogs$Elapsed.Time, na.rm = TRUE)
+dogs$Departure.Dogs[is.na(dogs$Departure.Dogs)] = mean(dogs$Departure.Dogs, na.rm = TRUE)
+dogs$Arrival.Time = NULL
+dogs$Departure.Time = NULL
+
+levels(dogs$Name) = c("Male", "Female", "Male", "Female","Male", "Female","Male","Male","Male","Male","Female","Female","Male","Male","Male","Male","Male","Male","Female","Male","Male", "Female", "Male","Male","Male","Male","Female", "Female","Male","Male","Female","Female", "Male","Male","Female","Male","Male","Male","Male","Male","Male","Female","Male","Female","Female","Male","Female","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Male","Female")
+
+levels(dogs$Checkpoint) = c("End", "Early", "Middle", "Middle", "End","End", "Middle", "Early", "Early","End", "Middle", "Middle","Early","End","Early","Middle","End")
+
+levels(dogs$Arrival.Date) = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+levels(dogs$Departure.Date) = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+splitIndex <- createDataPartition(dogs$Status, p = .70, list = FALSE, times = 1)
+train <- dogs[ splitIndex,]
+test <- dogs[-splitIndex,]
+
+train1 = train[train$Status =="Veteran",]
+train0 = train[train$Status =="Rookie",]
+n0 = nrow(train0)
+n1 = nrow(train1)
+train11 = train1[sample(1:n1, n0, replace = TRUE),]
+train_over = rbind(train0, train11)
+
+
+dummies_model <- dummyVars(Status ~ ., data=dogs)
+
+# Create the dummy variables using predict. The Y variable will not be present in trainData_mat.
+trainData_mat <- predict(dummies_model, newdata = dogs)
+
+# # Convert to dataframe
+trainData <- data.frame(trainData_mat)
+trainData$Status <- dogs$Status
+
+
+splitIndex <- createDataPartition(trainData$Status, p = .70, list = FALSE, times = 1)
+train <- trainData[ splitIndex,]
+test <- trainData[-splitIndex,]
+
+
+train1 = trainData[train$Status =="Veteran",]
+train0 = trainData[train$Status =="Rookie",]
+n0 = nrow(train0)
+n1 = nrow(train1)
+train11 = train1[sample(1:n1, n0, replace = TRUE),]
+train_over1 = rbind(train0, train11)
+
+```
+
+
+```{r}
+
+splitIndex <- createDataPartition(train_over1$Status, p = .70, list = FALSE, times = 1)
+train2 <- train_over1[ splitIndex,]
+test2 <- train_over1[-splitIndex,]
+
+
+model6 = ranger(Status ~., data = train2)
+pred1 = predict(model6, data = test2)$predictions
+cm1 = confusionMatrix(pred1, test2$Status, positive ="Veteran")
+
+cm1$overall[1]
+       
+cm1$byClass[11]
+```
